@@ -1,0 +1,26 @@
+TODO
+
+* have a strict mode (by default) for the AUTOLOAD that validates the levels/stack.
+
+* swap out LWP::Simple so can get HTTP status code
+
+* swap out WWW::Mechanize ??
+
+* more POD details; especially methods/attributes
+
+* add POD re: ENV vars for consumer key/secret for test suite
+
+* examples w/params (if nothing else, w/start_index/max_results)
+
+* access catalog w/o access token
+
+
+CURRENT COVERAGE:
+
+---------------------------- ------ ------ ------ ------ ------ ------ ------
+File                           stmt   bran   cond    sub    pod   time  total
+---------------------------- ------ ------ ------ ------ ------ ------ ------
+blib/lib/WWW/Netflix/API.pm    98.3   77.8   37.5  100.0  100.0  100.0   93.5
+Total                          98.3   77.8   37.5  100.0  100.0  100.0   93.5
+---------------------------- ------ ------ ------ ------ ------ ------ ------
+

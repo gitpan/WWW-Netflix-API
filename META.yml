@@ -1,0 +1,21 @@
+--- #YAML:1.0
+name:                WWW-Netflix-API
+version:             0.01
+abstract:            Interface for Netflix's API
+license:             ~
+author:              
+    - David Westbrook <dwestbrook@gmail.com>
+generated_by:        ExtUtils::MakeMaker version 6.44
+distribution_type:   module
+requires:     
+    Class::Accessor:               0
+    HTTP::Request::Common:         0
+    LWP::Simple:                   0
+    LWP::UserAgent:                0
+    Net::OAuth:                    0
+    Test::More:                    0
+    use URI::Escape:               0
+    use WWW::Mechanize:            0
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3
