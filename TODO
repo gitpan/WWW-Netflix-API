@@ -1,5 +1,7 @@
 TODO
 
+* need(?) way to pass params from _submit() to content_filter()
+
 * have a strict mode (by default) for the AUTOLOAD that validates the levels/stack.
 
 * swap out LWP::Simple so can get HTTP status code
@@ -14,13 +16,25 @@ TODO
 
 * access catalog w/o access token
 
+* sample apps
+  netflix_mover
+  calendar
 
-CURRENT COVERAGE:
+* errors.t
 
+* content_filter.t
+
+* queue.t ... include Title_States
+
+* examples/  directory;  POD section
+
+TEST COVERAGE:
+
+v0.02
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
 File                           stmt   bran   cond    sub    pod   time  total
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
-blib/lib/WWW/Netflix/API.pm    98.3   77.8   37.5  100.0  100.0  100.0   93.5
-Total                          98.3   77.8   37.5  100.0  100.0  100.0   93.5
+blib/lib/WWW/Netflix/API.pm    98.7   88.2   70.0  100.0  100.0  100.0   96.0
+Total                          98.7   88.2   70.0  100.0  100.0  100.0   96.0
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
 

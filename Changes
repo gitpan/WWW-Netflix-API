@@ -1,5 +1,20 @@
 Revision history for WWW-Netflix-API
 
-0.01    2008-10-07
-        Initial release.
+0.02	2008-10-09
+	* New tests (including queue management test):
+		t/api-errors.t
+		t/attributes.t
+		t/queue.t
+	* clean skip of tests is XML::Simple is not installed.
+	* examples/ directory.
+	* increased coverage stats.
+	* replaced LWP::Simple w/LWP::UserAgent for status on error.
+	* renamed xml_filter to content_filter.
+	* content arributes are now: content, original_content, content_error.
+	* new internal method _set_content().
+	* replaced submit() with Get(), Post(), and Delete().
+	* additional POD updates/fixes.
+
+0.01	2008-10-07
+	* Initial release.
 

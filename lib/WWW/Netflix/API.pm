@@ -3,12 +3,11 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use base qw(Class::Accessor);
 
 use Net::OAuth;
-use LWP::Simple();
 use HTTP::Request::Common;
 use LWP::UserAgent;
 use WWW::Mechanize;
@@ -17,30 +16,66 @@ use URI::Escape;
 __PACKAGE__->mk_accessors(qw/
 	consumer_key
 	consumer_secret
-	xml_filter
+	content_filter
 	access_token
 	access_secret
 	user_id
-	_content
+	content
+	original_content
+	content_error
 	_levels
 	rest_url
+	_url
+	_params
 /);
+
+sub _set_content {
+  my $self = shift;
+  my $content = shift;
+  $self->content_error(undef);
+  $self->original_content( $content );
+  $self->content( $self->original_content && $self->content_filter
+	? &{$self->content_filter}($self->original_content, @_)
+	: $self->original_content
+  );
+  return $self->content;
+}
 
 sub REST {
   my $self = shift;
+  my $url = shift;
   $self->_levels([]);
-  $self->_content(undef);
+  $self->_set_content(undef);
+  if( $url ){
+    my ($url, $querystring) = split '\?', $url, 2;
+    $self->_url($url);
+    $self->_params({
+	map {
+	  my ($k,$v) = split /=/, $_, 2;
+	  $k !~ /^oauth_/
+	    ? ( $k => uri_unescape($v) )
+	    : ()
+	}
+	split /&/, $querystring||''
+    });
+    return $self->url;
+  }
+  $self->_url(undef);
+  $self->_params({});
   return WWW::Netflix::API::_UrlAppender->new( stack => $self->_levels, append => {users=>$self->user_id} );
 }
 
 sub url {
   my $self = shift;
+  return $self->_url if $self->_url;
   return join '/', 'http://api.netflix.com', @{ $self->_levels || [] };
 }
 
-sub submit {
+sub _submit {
   my $self = shift;
-  my %options = (@_);
+  my $method = shift;
+  my %options = ( %{$self->_params || {}}, @_ );
+  $self->_set_content(undef);
   my $request = Net::OAuth->request("protected resource")->new(
 	consumer_key => $self->consumer_key,
 	consumer_secret => $self->consumer_secret,
@@ -49,7 +84,7 @@ sub submit {
 
 	token => $self->access_token,
 	token_secret => $self->access_secret,
-	request_method => 'GET',
+	request_method => $method,
 	signature_method => 'HMAC-SHA1',
 	timestamp => time,
 	nonce => join('::', $0, $$),
@@ -57,17 +92,41 @@ sub submit {
 	extra_params => \%options,
   );
   $request->sign;
-  $self->rest_url( $request->to_url->as_string );
-  $self->_content( LWP::Simple::get( $self->rest_url ) );
+  my $url = $request->to_url->as_string;
+  $self->rest_url( $url );
+
+  my $ua = LWP::UserAgent->new;
+  my $req;
+  if( $method eq 'GET' ){
+	$req = GET $url;
+  }elsif(  $method eq 'POST' ){
+	$req = POST $url;
+  }elsif(  $method eq 'DELETE' ){
+	$req = HTTP::Request->new( 'DELETE', $url );
+  }else{
+	$self->content_error( "Unknown method '$method'" );
+	return;
+  }
+  my $res = $ua->request($req);
+  if ( ! $res->is_success ) {
+	$self->content_error( sprintf '%s Request to "%s" failed (%s): "%s"', $method, $url, $res->status_line, $res->content );
+	return;
+  }
+  $self->_set_content( $res->content );
+
   return 1;
 }
-
-sub content {
+sub Get {
   my $self = shift;
-  return $self->_content && $self->xml_filter
-	? &{$self->xml_filter}($self->_content)
-	: $self->_content
-  ;
+  return $self->_submit('GET', @_);
+}
+sub Post {
+  my $self = shift;
+  return $self->_submit('POST', @_);
+}
+sub Delete {
+  my $self = shift;
+  return $self->_submit('DELETE', @_);
 }
 
 sub rest2sugar {
@@ -138,6 +197,7 @@ sub __get_token_response {
   my $response = Net::OAuth->response("$which token")->from_post_body($res->content);
   return $response;
 }
+
 sub __get_request_token {
   my $self = shift;
   my $response = $self->__get_token_response('request');
@@ -148,6 +208,7 @@ sub __get_request_token {
 	$response->extra_params->{application_name},
   );
 }
+
 sub __get_access_token {
   my $self = shift;
   my $response = $self->__get_token_response('access', @_);
@@ -229,11 +290,15 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
+
 
 =head1 OVERVIEW
 
-This module is to provide your perl applications with easy access to the L<Netflix API|http://developer.netflix.com/>.  The Netflix API allows access to movie and user information, including queues, rating, rental history, and more.
+This module is to provide your perl applications with easy access to the
+Netflix API (L<http://developer.netflix.com/>).
+The Netflix API allows access to movie and user information, including queues, rating, rental history, and more.
+
 
 =head1 SYNOPSIS
 
@@ -249,7 +314,7 @@ This module is to provide your perl applications with easy access to the L<Netfl
 	access_secret   => $auth{access_secret},
 	user_id         => $auth{user_id},
 
-	xml_filter => sub { use XML::Simple; XMLin(@_) },  # optional
+	content_filter => sub { use XML::Simple; XMLin(@_) },  # optional
   });
   if( ! $auth{user_id} ){
     my ( $user, $pass ) = .... ;
@@ -265,14 +330,17 @@ This module is to provide your perl applications with easy access to the L<Netfl
   $netflix->submit() or die 'request failed';
   print Dumper $netflix->content;
 
+
 =head1 GETTING STARTED
 
 The first step to using this module is to register at L<http://developer.netflix.com> -- you will need to register your application, for which you'll receive a consumer_key and consumer_secret keypair.
 
 Any applications written with the Netflix API must adhere to the
-L<Terms of Use|http://developer.netflix.com/page/Api_terms_of_use>
+Terms of Use (L<http://developer.netflix.com/page/Api_terms_of_use>)
 and
-L<Branding Requirements|http://developer.netflix.com/docs/Branding>.
+Branding Requirements (L<http://developer.netflix.com/docs/Branding>).
+
+=head2 Usage
 
 This module provides access to the REST API via perl syntactical sugar. For example, to find a user's queue, the REST url is of the form users/I<userID>/feeds :
 
@@ -280,7 +348,7 @@ This module provides access to the REST API via perl syntactical sugar. For exam
 
 Using this module, the syntax would be:
 
-  $netflix->REST->Users->Feeds;
+  $netflix->REST->Users->Queues->Disc;
   $netflix->submit(%$params) or die;
   print $netflix->content;
 
@@ -295,8 +363,9 @@ Other examples include:
 All of the possibilities (and parameter details) are outlined here:
 L<http://developer.netflix.com/docs/REST_API_Reference>
 
-There is a helper method L<rest2sugar> included that will provide the proper syntax given a url.  This is handy for translating the example urls in the REST API Reference.
+There is a helper method L<"rest2sugar"> included that will provide the proper syntax given a url.  This is handy for translating the example urls in the REST API Reference.
 
+=head2 Resources
 
 The following describe the authentication that's happening under the hood and were used heavily in writing this module:
 
@@ -306,39 +375,117 @@ L<http://josephsmarr.com/2008/10/01/using-netflixs-new-api-a-step-by-step-guide/
 
 L<Net::OAuth>
 
+=head1 EXAMPLES
+
+The examples/ directory in the distribution has several examples to use as starting points.
+
 =head1 METHODS 
 
 =head2 new
 
+This is the constructor.
+Takes a hashref of L<"ATTRIBUTES">.
+Inherited from L<Class::Accessor.>
+
+Most important options to pass are the L<"consumer_key"> and L<"consumer_secret">.
+
 =head2 REST
+
+This is used to change the resource that is being accessed. Some examples:
+
+  # The user-friendly way:
+  $netflix->REST->Users->Feeds;
+
+  # Including numeric parts:
+  $netflix->REST->Catalog->Titles->Movies('60021896');
+
+  # Load a pre-formed url (e.g. a title_ref from a previous query)
+  $netflix->REST('http://api.netflix.com/users/T1tareQFowlmc8aiTEXBcQ5aed9h_Z8zdmSX1SnrKoOCA-/queues/disc?feed_token=T1u.tZSbY9311F5W0C5eVQXaJ49.KBapZdwjuCiUBzhoJ_.lTGnmES6JfOZbrxsFzf&amp;oauth_consumer_key=v9s778n692e9qvd83wfj9t8c&amp;output=atom');
 
 =head2 RequestAccess
 
-=head2 submit
+This is used to login as a netflix user in order to get an access token.
 
-=head1 ATTRIBUTES
+  my ($access_token, $access_secret, $user_id) = $netflix->RequestAccess( $user, $pass );
 
-=head2 content
+=head2 Get
 
-=head2 url
+=head2 Post
+
+=head2 Delete
 
 =head2 rest2sugar
 
-=head2  .....other attributes.....
+
+=head1 ATTRIBUTES
+
+=head2 consumer_key
+
+=head2 consumer_secret
+
+=head2 access_token
+
+=head2 access_secret
+
+=head2 user_id
+
+=head2 content_filter
+
+The content returned by the REST calls is POX (plain old XML).  Setting this attribute to a code ref will cause the content to be "piped" through it.
+
+  use XML::Simple;
+  $netflix->content_filter(  sub { XMLin(@_) }  );  # Parse the XML into a perl data structure
+
+=head2 content
+
+Read-Only.
+
+=head2 original_content
+
+Read-Only.
+
+=head2 content_error
+
+Read-Only.
+
+=head2 url
+
+Read-Only.
+
+=head2 rest_url
+
+Read-Only.
+
 
 =head1 INTERNAL
 
+=head2 _url
+
+=head2 _params
+
+=head2 _levels
+
+=head2 _submit
+
+=head2 __get_token_response
+
+=head2 __get_request_token
+
+=head2 __get_access_token
+
+=head2 WWW::Netflix::API::_UrlAppender
+
+
 =head1 AUTHOR
 
-David Westbrook, C<< <dwestbrook at gmail.com> >>
+David Westbrook (CPAN: davidrw), C<< <dwestbrook at gmail.com> >>
+
 
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-www-netflix-api at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=WWW-Netflix-API>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
 
 
 =head1 SUPPORT
@@ -369,9 +516,6 @@ L<http://cpanratings.perl.org/d/WWW-Netflix-API>
 L<http://search.cpan.org/dist/WWW-Netflix-API>
 
 =back
-
-
-=head1 ACKNOWLEDGEMENTS
 
 
 =head1 COPYRIGHT & LICENSE
