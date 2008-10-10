@@ -1,5 +1,8 @@
 Revision history for WWW-Netflix-API
 
+0.03	2008-10-10
+	* POD fix: s/submit/Get/
+
 0.02	2008-10-09
 	* New tests (including queue management test):
 		t/api-errors.t

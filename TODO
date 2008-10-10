@@ -4,8 +4,6 @@ TODO
 
 * have a strict mode (by default) for the AUTOLOAD that validates the levels/stack.
 
-* swap out LWP::Simple so can get HTTP status code
-
 * swap out WWW::Mechanize ??
 
 * more POD details; especially methods/attributes
@@ -15,16 +13,6 @@ TODO
 * examples w/params (if nothing else, w/start_index/max_results)
 
 * access catalog w/o access token
-
-* sample apps
-  netflix_mover
-  calendar
-
-* errors.t
-
-* content_filter.t
-
-* queue.t ... include Title_States
 
 * examples/  directory;  POD section
 

@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use base qw(Class::Accessor);
 
@@ -153,7 +153,7 @@ sub rest2sugar {
   ;
   return (
 	join('->', @stack),
-	sprintf('$netflix->submit(%s)',
+	sprintf('$netflix->Get(%s)',
 		join( ', ', map { sprintf "'%s' => '%s'", @$_ } @params ),
 	),
   );
@@ -290,7 +290,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 
 =head1 OVERVIEW
@@ -323,11 +323,11 @@ The Netflix API allows access to movie and user information, including queues, r
   }
 
   $netflix->REST->Users->Feeds;
-  $netflix->submit() or die 'request failed';
+  $netflix->Get() or die 'request failed';
   print Dumper $netflix->content;
 
   $netflix->REST->Catalog->Titles->Movies('18704531');
-  $netflix->submit() or die 'request failed';
+  $netflix->Get() or die 'request failed';
   print Dumper $netflix->content;
 
 
@@ -349,7 +349,7 @@ This module provides access to the REST API via perl syntactical sugar. For exam
 Using this module, the syntax would be:
 
   $netflix->REST->Users->Queues->Disc;
-  $netflix->submit(%$params) or die;
+  $netflix->Get(%$params) or die;
   print $netflix->content;
 
 Other examples include:

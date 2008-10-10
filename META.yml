@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                WWW-Netflix-API
-version:             0.02
+version:             0.03
 abstract:            Interface for Netflix's API
 license:             ~
 author:              
