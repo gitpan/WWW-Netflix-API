@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use base qw(Class::Accessor);
 
@@ -234,13 +234,19 @@ sub RequestAccess {
 		$application_name,
     ; 
     $mech->get($url);
-    $mech->submit_form(
-	form_number => 1,
-	fields => {
+    if ( ! $mech->success ) {
+	warn sprintf 'Get of "%s" FAILED (%s): "%s"', $url, $mech->res->status_line, $mech->content;
+	return;
+    }
+    my %fields = (
 		login => $user,
 		password => $pass,
-	},
     );
+    if( ! $mech->form_with_fields(keys %fields) ){
+      warn "Submission to '$url' failed. Content: ".$mech->content;
+      return;
+    }
+    $mech->submit_form( fields => \%fields );
   return unless $mech->content =~ /successfully/i && $mech->content !~ /failed/i;
 
   my ($access_token, $access_secret, $user_id) = $self->__get_access_token( $request_token, $request_secret );
@@ -290,7 +296,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 
 =head1 OVERVIEW
@@ -323,11 +329,11 @@ The Netflix API allows access to movie and user information, including queues, r
   }
 
   $netflix->REST->Users->Feeds;
-  $netflix->Get() or die 'request failed';
+  $netflix->Get() or die $netflix->content_error;
   print Dumper $netflix->content;
 
   $netflix->REST->Catalog->Titles->Movies('18704531');
-  $netflix->Get() or die 'request failed';
+  $netflix->Get() or die $netflix->content_error;
   print Dumper $netflix->content;
 
 
@@ -346,10 +352,11 @@ This module provides access to the REST API via perl syntactical sugar. For exam
 
   http://api.netflix.com/users/T1tareQFowlmc8aiTEXBcQ5aed9h_Z8zdmSX1SnrKoOCA-/queues/disc
 
-Using this module, the syntax would be:
+Using this module, the syntax would be
+(note that the Post or Delete methods can be used instead of Get, depending upon the API action being taken):
 
   $netflix->REST->Users->Queues->Disc;
-  $netflix->Get(%$params) or die;
+  $netflix->Get(%$params) or die $netflix->content_error;
   print $netflix->content;
 
 Other examples include:
@@ -375,9 +382,40 @@ L<http://josephsmarr.com/2008/10/01/using-netflixs-new-api-a-step-by-step-guide/
 
 L<Net::OAuth>
 
+
 =head1 EXAMPLES
 
-The examples/ directory in the distribution has several examples to use as starting points.
+The I<examples/> directory in the distribution has several examples to use as starting points.
+
+There is a I<vars.inc> file in the directory -- most of these example read that for customer key/secret, etc, so fill that file out first to enter your specific values.
+
+Examples include:
+
+=over 4
+
+=item login.pl
+
+Takes a netflix account login/password and (for a customer key) obtains an access token, secret, and user_id.
+
+=item profile.pl
+
+Gets a user's netflix profile and prints the name.
+
+=item queue.pl
+
+Displays the Disc and Instant queues for a user.
+
+=item feeds.pl
+
+Grabs all of the user's feeds and stores the .rss files to disk.
+
+=item history2ical.pl
+
+Converts the rental history (shipped/returned, watched dates) into an ICal calendar (.ics) file.
+
+=back
+
+Also see the L<"TEST SUITE"> source code for more examples.
 
 =head1 METHODS 
 
@@ -474,6 +512,37 @@ Read-Only.
 =head2 __get_access_token
 
 =head2 WWW::Netflix::API::_UrlAppender
+
+
+=head1 TEST SUITE
+
+Most of the test suite in the I<t/> directory requires a customer key/secret and access token/secret.  You can supply these via enviromental variables:
+
+	# *nix
+	export WWW_NETFLIX_API__CONSUMER_KEY="qweqweqwew"
+	export WWW_NETFLIX_API__CONSUMER_SECRET="asdasd"
+	export WWW_NETFLIX_API__LOGIN_USER="you@example.com"
+	export WWW_NETFLIX_API__LOGIN_PASS="qpoiuy"
+	export WWW_NETFLIX_API__ACCESS_TOKEN="trreqweyueretrewere"
+	export WWW_NETFLIX_API__ACCESS_SECRET="mnmbmbdsf"
+
+	REM DOS
+	SET WWW_NETFLIX_API__CONSUMER_KEY=qweqweqwew
+	SET WWW_NETFLIX_API__CONSUMER_SECRET=asdasd
+	SET WWW_NETFLIX_API__LOGIN_USER=you@example.com
+	SET WWW_NETFLIX_API__LOGIN_PASS=qpoiuy
+	SET WWW_NETFLIX_API__ACCESS_TOKEN=trreqweyueretrewere
+	SET WWW_NETFLIX_API__ACCESS_SECRET=mnmbmbdsf
+
+And then, from the extracted distribution directory, either run the whole test suite:
+
+	perl Makefile.PL
+	make test
+
+or just execute specific tests:
+
+	prove -v -Ilib t/api.t
+	prove -v -Ilib t/access_token.t
 
 
 =head1 AUTHOR

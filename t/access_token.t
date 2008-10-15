@@ -1,4 +1,4 @@
-#!perl -T
+#!perl
 
 use strict;
 use warnings;
@@ -28,7 +28,7 @@ my $pass = $env{login_pass};
 
 my ($access_token, $access_secret, $user_id) = $netflix->RequestAccess( $user, $pass );
 
-ok( $access_token,  "got access_token" );
+ok( $access_token,  "got access_token: " . $access_token );
 ok( $access_secret, "got access_secret" );
-ok( $user_id,       "got user_id" );
+ok( $user_id,       "got user_id: " . $user_id );
 

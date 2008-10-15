@@ -1,5 +1,12 @@
 Revision history for WWW-Netflix-API
 
+0.04	2008-10-15
+	* added some extra error handling in RequestAccess() method. (thanks to report from laral4)
+	* fixed examples/login.pl typo.
+	* misc pod fixes.
+	* Improved the EXAMPLES pod section.
+	* Added the TEST SUITE pod section, including documenting the ENV vars.
+
 0.03	2008-10-10
 	* POD fix: s/submit/Get/
 

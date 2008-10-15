@@ -5,7 +5,7 @@ use warnings;
 use WWW::Netflix::API;
 use XML::Simple;
 use Data::Dumper;
-my ($consumer_key, $consumer_secret, $user, $pass) = @_;
+my ($consumer_key, $consumer_secret, $user, $pass) = @ARGV;
 
 my %auth = (
         consumer_key    => $consumer_key,

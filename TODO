@@ -8,21 +8,22 @@ TODO
 
 * more POD details; especially methods/attributes
 
-* add POD re: ENV vars for consumer key/secret for test suite
-
 * examples w/params (if nothing else, w/start_index/max_results)
 
 * access catalog w/o access token
 
-* examples/  directory;  POD section
+* better error handling in RequestAccess() ... set a error string somewhere.
+
+* can __get_token_response() call _submit for Net::OAuth (to consolidate code)?
+
 
 TEST COVERAGE:
 
-v0.02
+v0.04
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
 File                           stmt   bran   cond    sub    pod   time  total
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
-blib/lib/WWW/Netflix/API.pm    98.7   88.2   70.0  100.0  100.0  100.0   96.0
-Total                          98.7   88.2   70.0  100.0  100.0  100.0   96.0
+blib/lib/WWW/Netflix/API.pm    96.2   84.2   70.0  100.0  100.0  100.0   93.6
+Total                          96.2   84.2   70.0  100.0  100.0  100.0   93.6
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
 
