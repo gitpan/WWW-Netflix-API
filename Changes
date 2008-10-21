@@ -1,5 +1,19 @@
 Revision history for WWW-Netflix-API
 
+0.05	2008-10-21
+	* added examples/catalog.pl -- pulls entire catalog down to catalog.xml.
+	* added examples/search.pl -- uses the catalog api to search for a term.
+	* added examples/catalog2db.pl -- converts catalog.xml to a SQLite database.
+	* changed the content-related attributes/behavior.  Now is much more memory
+		efficient. _set_content() takes and stored a scalar ref, so large
+		(for example the catalog index) content is copied around. Also, the
+		content_filter isn't used until the first invocation of content(),
+		at which point the results are cached in the _filtered_content attribute.
+	* t/attributes.t updated accordingly.
+	* updated EXAMPLES pod.
+	* updated ATTRIBUTES pod.
+	* added t/rest2sugar.t to MANIFEST
+
 0.04	2008-10-15
 	* added some extra error handling in RequestAccess() method. (thanks to report from laral4)
 	* fixed examples/login.pl typo.

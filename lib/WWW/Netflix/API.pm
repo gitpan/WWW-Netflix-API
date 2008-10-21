@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use base qw(Class::Accessor);
 
@@ -20,25 +20,37 @@ __PACKAGE__->mk_accessors(qw/
 	access_token
 	access_secret
 	user_id
-	content
-	original_content
-	content_error
 	_levels
 	rest_url
 	_url
 	_params
+
+	content_ref
+	_filtered_content
+	content_error
 /);
+
+sub content {
+  my $self = shift;
+  return $self->_filtered_content if $self->_filtered_content;
+  return unless $self->content_ref;
+  return ${$self->content_ref} unless $self->content_filter;
+  return $self->_filtered_content(
+	&{$self->content_filter}( ${$self->content_ref}, @_ )
+  );
+}
+
+sub original_content {
+  my $self = shift;
+  return $self->content_ref ? ${$self->content_ref} : undef;
+}
 
 sub _set_content {
   my $self = shift;
-  my $content = shift;
-  $self->content_error(undef);
-  $self->original_content( $content );
-  $self->content( $self->original_content && $self->content_filter
-	? &{$self->content_filter}($self->original_content, @_)
-	: $self->original_content
-  );
-  return $self->content;
+  my $content_ref = shift;
+  $self->content_error( undef );
+  $self->_filtered_content( undef );
+  return $self->content_ref( $content_ref );
 }
 
 sub REST {
@@ -98,6 +110,10 @@ sub _submit {
   my $ua = LWP::UserAgent->new;
   my $req;
   if( $method eq 'GET' ){
+#use LWP::Simple();
+#warn $url;
+#LWP::Simple::getstore $url, 'catalog.dat';
+#return 1;
 	$req = GET $url;
   }elsif(  $method eq 'POST' ){
 	$req = POST $url;
@@ -112,7 +128,7 @@ sub _submit {
 	$self->content_error( sprintf '%s Request to "%s" failed (%s): "%s"', $method, $url, $res->status_line, $res->content );
 	return;
   }
-  $self->_set_content( $res->content );
+  $self->_set_content( $res->content_ref );
 
   return 1;
 }
@@ -296,7 +312,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 
 =head1 OVERVIEW
@@ -413,6 +429,25 @@ Grabs all of the user's feeds and stores the .rss files to disk.
 
 Converts the rental history (shipped/returned, watched dates) into an ICal calendar (.ics) file.
 
+=item search.pl
+
+Takes a search string and returns the results from a catalog search.
+
+  $ perl search.pl firefly
+  4 results:
+  Grave of the Fireflies (1988)
+  Firefly Dreams (2001)
+  Firefly (2002)
+  Serenity (2005)
+
+=item catalog.pl
+
+Retireves the entire Netflix catalog and saves it to I<catalog.xml> in the current directory.
+
+=item catalog2db.pl
+
+Converts the xmlfile fetched by I<catalog.pl> to a SQLite database.  Also contains an example Class::DBI setup for working with the generated database.
+
 =back
 
 Also see the L<"TEST SUITE"> source code for more examples.
@@ -476,15 +511,19 @@ The content returned by the REST calls is POX (plain old XML).  Setting this att
 
 =head2 content
 
-Read-Only.
+Read-Only.  This returns the content from the REST calls. Natively, this is a scalar of POX (plain old XML).  If a L<"content_filter"> is set, the L<"original_content"> is filtered through that, and the result is returned as the value of the I<content> attribute (and is cached in the L<"_filtered_content"> attribute.
 
 =head2 original_content
 
-Read-Only.
+Read-Only. This will return a scalar which is simply a dereference of L<"content_ref">.
+
+=head2 content_ref
+
+Scalar reference to the original content.
 
 =head2 content_error
 
-Read-Only.
+Read-Only. If an error occurs, this will hold the error message/information.
 
 =head2 url
 
@@ -510,6 +549,14 @@ Read-Only.
 =head2 __get_request_token
 
 =head2 __get_access_token
+
+=head2 _set_content
+
+Takes scalar reference.
+
+=head2 _filtered_content
+
+Used to cache the return value of filtering the content through the content_filter.
 
 =head2 WWW::Netflix::API::_UrlAppender
 

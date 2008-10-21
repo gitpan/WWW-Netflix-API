@@ -16,14 +16,18 @@ TODO
 
 * can __get_token_response() call _submit for Net::OAuth (to consolidate code)?
 
+* title search example
+
+* autocomplete example
+
 
 TEST COVERAGE:
 
-v0.04
+v0.05
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
 File                           stmt   bran   cond    sub    pod   time  total
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
-blib/lib/WWW/Netflix/API.pm    96.2   84.2   70.0  100.0  100.0  100.0   93.6
-Total                          96.2   84.2   70.0  100.0  100.0  100.0   93.6
+blib/lib/WWW/Netflix/API.pm    96.4   86.4   57.1  100.0  100.0  100.0   94.0
+Total                          96.4   86.4   57.1  100.0  100.0  100.0   94.0
 ---------------------------- ------ ------ ------ ------ ------ ------ ------
 

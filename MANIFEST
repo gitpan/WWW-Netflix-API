@@ -13,10 +13,14 @@ t/access_token.t
 t/boilerplate.t
 t/attributes.t
 t/queue.t
+t/rest2sugar.t
 examples/vars.inc
 examples/profile.pl
 examples/login.pl
 examples/feeds.pl
 examples/history2ical.pl
 examples/queue.pl
+examples/catalog.pl
+examples/search.pl
+examples/catalog2db.pl
 META.yml                                 Module meta-data (added by MakeMaker)

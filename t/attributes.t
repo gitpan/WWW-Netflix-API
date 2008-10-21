@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More tests => 87;
+use Test::More tests => 96;
 use WWW::Netflix::API;
 $|=1;
 
@@ -15,13 +15,14 @@ foreach my $k ( qw/
 	access_token
 	access_secret
 	user_id
-	content
-	original_content
-	content_error
 	_levels
 	rest_url
 	_url
 	_params
+
+	content_ref
+	_filtered_content
+	content_error
 / ){
   my $label = "[$k]";
   SKIP: {
@@ -33,36 +34,52 @@ foreach my $k ( qw/
   };
 }
 
+
 # content
 my $fn = sub { uc '='.$_[0].'=' };
-
-is( $netflix->content(123),          123, '[clear content] set content' );
-is( $netflix->original_content(123), 123, '[clear content] set original_content' );
-is( $netflix->content_error(123),    123, '[clear content] set content_error' );
+my $s = 'foo';
+my $s2 = '=FOO=';
 
 is( $netflix->content_filter(undef), undef, '[clear content-] unset filter' );
 is( $netflix->_set_content(undef),   undef, '[clear content-] clear content' );
+#
+is( $netflix->content_ref,           undef, '[clear content-] check content_ref');
+is( $netflix->_filtered_content,     undef, '[clear content-] check _filtered_content');
 is( $netflix->content,               undef, '[clear content-] check content');
+is( $netflix->_filtered_content,     undef, '[clear content-] check _filtered_content');
 is( $netflix->original_content,      undef, '[clear content-] check original_content' );
 is( $netflix->content_error,         undef, '[clear content-] check content_error' );
 
-is( $netflix->content_filter($fn),   $fn,   '[clear content+] set filter' );
+is( $netflix->content_filter($fn),   $fn,   '[clear content+] unset filter' );
 is( $netflix->_set_content(undef),   undef, '[clear content+] clear content' );
+#
+is( $netflix->content_ref,           undef, '[clear content+] check content_ref');
+is( $netflix->_filtered_content,     undef, '[clear content+] check _filtered_content');
 is( $netflix->content,               undef, '[clear content+] check content');
+is( $netflix->_filtered_content,     undef, '[clear content+] check _filtered_content');
 is( $netflix->original_content,      undef, '[clear content+] check original_content' );
 is( $netflix->content_error,         undef, '[clear content+] check content_error' );
 
-is( $netflix->content_filter($fn),     $fn,      '[set content+] set filter' );
-is( $netflix->_set_content('foo'),     '=FOO=',  '[set content+] set content' );
-is( $netflix->content('=FOO='),        '=FOO=',  '[set content+] check content' );
-is( $netflix->original_content('foo'), 'foo',    '[set content+] check original_content' );
-is( $netflix->content_error(undef),    undef,    '[set content+] check content_error' );
 
-is( $netflix->content_filter(undef),   undef,    '[set content-] unset filter' );
-is( $netflix->_set_content('foo'),     'foo',    '[set content-] set content' );
-is( $netflix->content('foo'),          'foo',    '[set content-] check content' );
-is( $netflix->original_content('foo'), 'foo',    '[set content-] check original_content' );
-is( $netflix->content_error(undef),    undef,    '[set content-] check content_error' );
+is( $netflix->content_filter(undef), undef, '[set content-] unset filter' );
+is( $netflix->_set_content(\$s),     \$s,   '[set content-] set content' );
+#
+is( $netflix->content_ref,           \$s,   '[set content-] check content_ref');
+is( $netflix->_filtered_content,     undef, '[set content-] check _filtered_content');
+is( $netflix->content,               $s,    '[set content-] check content');
+is( $netflix->_filtered_content,     undef, '[set content-] check _filtered_content');
+is( $netflix->original_content,      $s,    '[set content-] check original_content' );
+is( $netflix->content_error,         undef, '[set content-] check content_error' );
+
+is( $netflix->content_filter($fn),   $fn,   '[set content+] unset filter' );
+is( $netflix->_set_content(\$s),     \$s,   '[set content+] set content' );
+#
+is( $netflix->content_ref,           \$s,   '[set content+] check content_ref');
+is( $netflix->_filtered_content,     undef, '[set content+] check _filtered_content');
+is( $netflix->content,               $s2,   '[set content+] check content');
+is( $netflix->_filtered_content,     $s2,   '[set content+] check _filtered_content');
+is( $netflix->original_content,      $s,    '[set content+] check original_content' );
+is( $netflix->content_error,         undef, '[set content+] check content_error' );
 
 
 # url
