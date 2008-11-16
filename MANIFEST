@@ -14,6 +14,7 @@ t/boilerplate.t
 t/attributes.t
 t/queue.t
 t/rest2sugar.t
+t/catalog.t
 examples/vars.inc
 examples/profile.pl
 examples/login.pl

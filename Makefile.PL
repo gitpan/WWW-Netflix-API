@@ -11,7 +11,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Test::More'                   => 0,
         'Class::Accessor'              => 0,
-        'Net::OAuth'                   => 0,
+        'Net::OAuth'                   => 0.13,
         'LWP::Simple'                  => 0,
         'HTTP::Request::Common'        => 0,
         'LWP::UserAgent'               => 0,

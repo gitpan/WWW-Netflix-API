@@ -37,6 +37,7 @@ sub check_submit {
   my $label = sprintf '[%s] ', join('/', @{ $netflix->_levels });
   my $uid = $netflix->user_id;
   $label =~ s/$uid/<UID>/g;
+  sleep 1;   # avoid 'Over queries per second limit' error
   ok( $netflix->Get(%$options), "$label got data" );
   is( $netflix->content_error, undef, "$label no error" );
   is( join(',', sort keys %{$netflix->content || {}}), $keys, "$label keys match" );

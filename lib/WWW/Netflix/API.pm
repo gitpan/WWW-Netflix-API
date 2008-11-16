@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use base qw(Class::Accessor);
 
@@ -88,7 +88,8 @@ sub _submit {
   my $method = shift;
   my %options = ( %{$self->_params || {}}, @_ );
   $self->_set_content(undef);
-  my $request = Net::OAuth->request("protected resource")->new(
+  my $which = $self->access_token ? 'protected resource' : 'consumer'; 
+  my $request = Net::OAuth->request($which)->new(
 	consumer_key => $self->consumer_key,
 	consumer_secret => $self->consumer_secret,
 
@@ -110,10 +111,6 @@ sub _submit {
   my $ua = LWP::UserAgent->new;
   my $req;
   if( $method eq 'GET' ){
-#use LWP::Simple();
-#warn $url;
-#LWP::Simple::getstore $url, 'catalog.dat';
-#return 1;
 	$req = GET $url;
   }elsif(  $method eq 'POST' ){
 	$req = POST $url;
@@ -300,6 +297,8 @@ sub AUTOLOAD {
   return $self;
 }
 
+########################################
+
 1; # End of WWW::Netflix::API
 
 __END__
@@ -312,7 +311,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.05
+Version 0.06
 
 
 =head1 OVERVIEW

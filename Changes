@@ -1,5 +1,12 @@
 Revision history for WWW-Netflix-API
 
+0.06	2008-11-16
+	* Support for basic resources (e.g. catalog) w/o requiring access_token.
+		(Thanks to Jim Spath for the Net::OAuth subclass)
+	* Added t/catalog.t to test w/o access_token.
+	* Require Net::OAuth >= 0.13 Net::OAuth::ConsumerRequest
+	* t/api.t -- added sleep(1)'s to avoid 'Over queries per second limit'.
+
 0.05	2008-10-21
 	* added examples/catalog.pl -- pulls entire catalog down to catalog.xml.
 	* added examples/search.pl -- uses the catalog api to search for a term.
