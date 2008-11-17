@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 use base qw(Class::Accessor);
 
@@ -17,6 +17,7 @@ __PACKAGE__->mk_accessors(qw/
 	consumer_key
 	consumer_secret
 	content_filter
+	ua
 	access_token
 	access_secret
 	user_id
@@ -87,45 +88,18 @@ sub _submit {
   my $self = shift;
   my $method = shift;
   my %options = ( %{$self->_params || {}}, @_ );
-  $self->_set_content(undef);
   my $which = $self->access_token ? 'protected resource' : 'consumer'; 
-  my $request = Net::OAuth->request($which)->new(
-	consumer_key => $self->consumer_key,
-	consumer_secret => $self->consumer_secret,
-
-        request_url => $self->url,
-
+  my $res = $self->__OAuth_Request(
+	$which,
+	request_url    => $self->url,
+	request_method => $method,
 	token => $self->access_token,
 	token_secret => $self->access_secret,
-	request_method => $method,
-	signature_method => 'HMAC-SHA1',
-	timestamp => time,
-	nonce => join('::', $0, $$),
-	version => '1.0',
 	extra_params => \%options,
-  );
-  $request->sign;
-  my $url = $request->to_url->as_string;
-  $self->rest_url( $url );
-
-  my $ua = LWP::UserAgent->new;
-  my $req;
-  if( $method eq 'GET' ){
-	$req = GET $url;
-  }elsif(  $method eq 'POST' ){
-	$req = POST $url;
-  }elsif(  $method eq 'DELETE' ){
-	$req = HTTP::Request->new( 'DELETE', $url );
-  }else{
-	$self->content_error( "Unknown method '$method'" );
+  ) or do {
+	warn $self->content_error;
 	return;
-  }
-  my $res = $ua->request($req);
-  if ( ! $res->is_success ) {
-	$self->content_error( sprintf '%s Request to "%s" failed (%s): "%s"', $method, $url, $res->status_line, $res->content );
-	return;
-  }
-  $self->_set_content( $res->content_ref );
+  };
 
   return 1;
 }
@@ -175,69 +149,27 @@ sub rest2sugar {
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-sub __get_token_response {
-  my $self = shift;
-  my $which = shift;
-  my $token = shift;
-  my $secret = shift;
-  my %urls = qw(
-	request	http://api.netflix.com/oauth/request_token
-	access	http://api.netflix.com/oauth/access_token
-  );
-  my $request = Net::OAuth->request("$which token")->new(
-	consumer_key => $self->consumer_key,
-	consumer_secret => $self->consumer_secret,
-	($token ? ( token => $token,
-	token_secret => $secret, ) : () ),
-	request_url => $urls{$which},
-	request_method => 'POST',
-	signature_method => 'HMAC-SHA1',
-	timestamp => time,
-	nonce => join('::', $0, $$),
-	version => '1.0',
-  );
-
-  $request->sign;
-
-  my $ua = LWP::UserAgent->new;
-  my $res = $ua->request(POST $request->to_url); # Post message to the Service Provider
-
-  if (! $res->is_success) {
-	warn sprintf 'Request for %s token failed (%s): "%s"', $which, $res->status_line, $res->content;
-	return;
-  }
-
-  my $response = Net::OAuth->response("$which token")->from_post_body($res->content);
-  return $response;
-}
-
-sub __get_request_token {
-  my $self = shift;
-  my $response = $self->__get_token_response('request');
-  return (
-	$response->token,
-	$response->token_secret,
-	$response->extra_params->{login_url},
-	$response->extra_params->{application_name},
-  );
-}
-
-sub __get_access_token {
-  my $self = shift;
-  my $response = $self->__get_token_response('access', @_);
-  return (
-	$response->token,
-	$response->token_secret,
-	$response->extra_params->{user_id},
-  );
-}
-
 sub RequestAccess {
   my $self = shift;
   my ($user, $pass) = @_;
 
-  my ($request_token, $request_secret, $login_url, $application_name) = $self->__get_request_token;
-
+  my ($request, $response);
+  ###
+  $request = $self->__OAuth_Request(
+	'request token',
+	request_url  => 'http://api.netflix.com/oauth/request_token',
+	request_method => 'POST',
+  ) or do {
+	warn $self->content_error;
+	return;
+  };
+  $response = Net::OAuth->response('request token')->from_post_body( $self->original_content );
+  my $request_token    = $response->token
+	or return;
+  my $request_secret   = $response->token_secret;
+  my $login_url        = $response->extra_params->{login_url};
+  my $application_name = $response->extra_params->{application_name};
+  ###
     my $mech = WWW::Mechanize->new;
     my $url = sprintf '%s&oauth_callback=%s&oauth_consumer_key=%s&application_name=%s',
 	$login_url,
@@ -261,15 +193,81 @@ sub RequestAccess {
     }
     $mech->submit_form( fields => \%fields );
   return unless $mech->content =~ /successfully/i && $mech->content !~ /failed/i;
+  ###
+  $request = $self->__OAuth_Request(
+	'access token',
+	request_url  => 'http://api.netflix.com/oauth/access_token',
+	request_method => 'POST',
+	token => $request_token,
+	token_secret => $request_secret,
+  ) or do {
+	warn $self->content_error;
+	return;
+  };
+  $response = Net::OAuth->response('access token')->from_post_body( $self->original_content );
 
-  my ($access_token, $access_secret, $user_id) = $self->__get_access_token( $request_token, $request_secret );
-
-  $self->access_token(   $access_token  );
-  $self->access_secret(  $access_secret );
-  $self->user_id(        $user_id       );
+  $self->access_token(  $response->token );
+  $self->access_secret( $response->token_secret );
+  $self->user_id(       $response->extra_params->{user_id} );
   return ($self->access_token, $self->access_secret, $self->user_id);
 }
 
+sub __OAuth_Request {
+  my $self = shift;
+  my $request_type = shift;
+  my $params = {   # Options to pass-through to Net::OAuth::*Request constructor
+	# Static:
+        consumer_key      => $self->consumer_key,
+        consumer_secret   => $self->consumer_secret,
+        signature_method  => 'HMAC-SHA1',
+        timestamp         => time,
+        nonce             => join('::', $0, $$),
+        version           => '1.0',
+
+	# Defaults:
+	request_url       => $self->url,
+	request_method    => 'POST',
+
+	# User overrides/additions:
+	@_
+
+	# Most common user-provided params will be:
+	#   request_url
+	#   request_method
+	#   token
+	#   token_secret
+	#   extra_params
+  };
+  $self->_set_content(undef);
+
+  my $request = Net::OAuth->request( $request_type )->new( %$params );
+  $request->sign;
+
+  my $url = $request->to_url->as_string;
+  $self->rest_url( $url );
+
+  my $method = $params->{request_method};
+  my $req;
+  if( $method eq 'GET' ){
+        $req = GET $url;
+  }elsif(  $method eq 'POST' ){
+        $req = POST $url;
+  }elsif(  $method eq 'DELETE' ){
+        $req = HTTP::Request->new( 'DELETE', $url );
+  }else{
+        $self->content_error( "Unknown method '$method'" );
+        return;
+  }
+  $self->ua( LWP::UserAgent->new() ) unless $self->ua;
+  my $response = $self->ua->request($req);
+  if ( ! $response->is_success ) {
+        $self->content_error( sprintf '%s Request to "%s" failed (%s): "%s"', $method, $url, $response->status_line, $response->content );
+        return;
+  }
+  $self->_set_content( $response->content_ref );
+
+  return $response;
+}
 
 ########################################
 
@@ -311,7 +309,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.06
+Version 0.07
 
 
 =head1 OVERVIEW
@@ -324,6 +322,7 @@ The Netflix API allows access to movie and user information, including queues, r
 =head1 SYNOPSIS
 
   use WWW::Netflix::API;
+  use XML::Simple;
   use Data::Dumper;
 
   my %auth = Your::Custom::getAuthFromCache();
@@ -350,6 +349,20 @@ The Netflix API allows access to movie and user information, including queues, r
   $netflix->REST->Catalog->Titles->Movies('18704531');
   $netflix->Get() or die $netflix->content_error;
   print Dumper $netflix->content;
+
+And for resources that do not require a netflix account:
+
+  use WWW::Netflix::API;
+  use XML::Simple;
+  my $netflix = WWW::Netflix::API->new({
+        consumer_key
+        consumer_secret
+        content_filter => sub { XMLin(@_) },
+  });
+  $netflix->REST->Catalog->Titles;
+  $netflix->Get( term => 'zzyzx' );
+  printf "%d Results.\n", $netflix->content->{number_of_results};
+  printf "Title: %s\n", $_->{title}->{regular} for values %{ $netflix->content->{catalog_title} };
 
 
 =head1 GETTING STARTED
@@ -501,6 +514,12 @@ This is used to login as a netflix user in order to get an access token.
 
 =head2 user_id
 
+=head2 ua
+
+User agent to use under the hood.  Defaults to L<LWP::UserAgent>->new().   Can be altered anytime, e.g.
+
+	$netflix->ua->timeout(500);
+
 =head2 content_filter
 
 The content returned by the REST calls is POX (plain old XML).  Setting this attribute to a code ref will cause the content to be "piped" through it.
@@ -543,11 +562,7 @@ Read-Only.
 
 =head2 _submit
 
-=head2 __get_token_response
-
-=head2 __get_request_token
-
-=head2 __get_access_token
+=head2 __OAuth_Request
 
 =head2 _set_content
 

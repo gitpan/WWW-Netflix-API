@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               WWW-Netflix-API
-version:            0.06
+version:            0.07
 abstract:           Interface for Netflix's API
 author:
     - David Westbrook <dwestbrook@gmail.com>
