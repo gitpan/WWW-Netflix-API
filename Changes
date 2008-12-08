@@ -1,5 +1,17 @@
 Revision history for WWW-Netflix-API
 
+0.08	2008-12-08
+	* added examples/catalog-lwp_handlers.pl to MANIFEST
+	* changed examples/catalog.pl to show saving directly to file
+		by using content_filter => $filename
+	* examples/catalog2db.pl updated to reflect catalog.xml scheme change
+	* now defulats ->ua attribute in the constructor, instead of waiting
+		for first invocation of _submit().
+	* if content_filter exists and is a scalar, then use it as the
+		filename to write to instead of content being in memory.
+		Added pod to that effect.
+	* added 'Retrieve entire catalog:' example in pod.
+
 0.07	2008-11-17
 	* refactored the internal methods that wrap Net::OAuth calls.
 	* made the underlying LWP::UserAgent an attribute. (Jim Spath)

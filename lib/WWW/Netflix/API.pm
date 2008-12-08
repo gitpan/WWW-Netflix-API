@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use base qw(Class::Accessor);
 
@@ -31,11 +31,18 @@ __PACKAGE__->mk_accessors(qw/
 	content_error
 /);
 
+sub new {
+  my $self = shift;
+  my $fields = shift || {};
+  $fields->{ua} ||= LWP::UserAgent->new();
+  return $self->SUPER::new( $fields, @_ );
+}
+
 sub content {
   my $self = shift;
   return $self->_filtered_content if $self->_filtered_content;
   return unless $self->content_ref;
-  return ${$self->content_ref} unless $self->content_filter;
+  return ${$self->content_ref} unless $self->content_filter && ref($self->content_filter);
   return $self->_filtered_content(
 	&{$self->content_filter}( ${$self->content_ref}, @_ )
   );
@@ -258,8 +265,8 @@ sub __OAuth_Request {
         $self->content_error( "Unknown method '$method'" );
         return;
   }
-  $self->ua( LWP::UserAgent->new() ) unless $self->ua;
-  my $response = $self->ua->request($req);
+  # if content_filter exists and is a scalar, then use it as the filename to write to instead of content being in memory.
+  my $response = $self->ua->request( $req, ($self->content_filter && !ref($self->content_filter) ? $self->content_filter : ()) );
   if ( ! $response->is_success ) {
         $self->content_error( sprintf '%s Request to "%s" failed (%s): "%s"', $method, $url, $response->status_line, $response->content );
         return;
@@ -309,7 +316,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.07
+Version 0.08
 
 
 =head1 OVERVIEW
@@ -364,6 +371,11 @@ And for resources that do not require a netflix account:
   printf "%d Results.\n", $netflix->content->{number_of_results};
   printf "Title: %s\n", $_->{title}->{regular} for values %{ $netflix->content->{catalog_title} };
 
+
+  # Retrieve entire catalog:
+  $netflix->content_filter('catalog.xml');
+  $netflix->REST->Catalog->Titles->Index;
+  $netflix->Get();
 
 =head1 GETTING STARTED
 
@@ -454,7 +466,11 @@ Takes a search string and returns the results from a catalog search.
 
 =item catalog.pl
 
-Retireves the entire Netflix catalog and saves it to I<catalog.xml> in the current directory.
+Retrieves the entire Netflix catalog and saves it to I<catalog.xml> in the current directory.
+
+=item catalog-lwp_handlers.pl
+
+Retrieves the entire Netflix catalog and saves it to I<catalog.xml> in the current directory -- uses LWP handlers as an example of modifying the L<"ua"> attribute.
 
 =item catalog2db.pl
 
@@ -526,6 +542,13 @@ The content returned by the REST calls is POX (plain old XML).  Setting this att
 
   use XML::Simple;
   $netflix->content_filter(  sub { XMLin(@_) }  );  # Parse the XML into a perl data structure
+
+If this is set to a scalar, it will be treated as a filename to store the result to, instead of it going to memory.  This is especially useful for retrieving the (large) full catalog -- see L<"catalog.pl">. 
+
+  $netflix->content_filter('catalog.xml');
+  $netflix->REST->Catalog->Titles->Index;
+  $netflix->Get();
+  # print `ls -lart catalog.xml`
 
 =head2 content
 

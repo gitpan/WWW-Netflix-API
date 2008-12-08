@@ -60,7 +60,7 @@ package My::Categories;
 use base 'My::DBI';
 __PACKAGE__->table('categories');
 __PACKAGE__->columns(Primary => 'id');
-__PACKAGE__->columns(Essential => qw/ term label scheme /);
+__PACKAGE__->columns(Essential => qw/ term label scheme status /);
 __PACKAGE__->index_definitions([
 	[ Unique => qw/ term label scheme / ],
 ]);
@@ -138,7 +138,11 @@ sub title_index_item {
 
     $obj->categories->delete_all;
     foreach my $atts ( map { $_->atts } $x->children('category') ){
-      my $cat = My::Categories->find_or_create( $atts );
+      my %cat_key;
+      @cat_key{qw/ term label scheme /} = @$atts{qw/ term label scheme /};
+      my ($cat) = My::Categories->search( %cat_key );
+      $cat ||= My::Categories->insert( $atts );
+      $cat->status( $atts->{status} ) if $atts->{status} && ! $cat->status;  # backfill newly added status column
       $obj->add_to_categories({ category_id => $cat->id });
     }
 

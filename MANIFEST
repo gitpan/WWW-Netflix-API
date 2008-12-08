@@ -25,4 +25,5 @@ examples/queue.pl
 examples/catalog.pl
 examples/search.pl
 examples/catalog2db.pl
+examples/catalog-lwp_handlers.pl
 META.yml                                 Module meta-data (added by MakeMaker)
