@@ -51,7 +51,7 @@ is( $user_id,  undef, "no user_id" );
 # Test login failure
 $netflix->consumer_secret( '' );
 ($access_token, $access_secret, $user_id) = $netflix->RequestAccess( $user . rand(), $pass );
-like( $netflix->content_error, qr/^POST Request to ".+?" failed \(401 Unauthorized\): "Invalid signature"$/, 'proper error' );
+like( $netflix->content_error, qr/^POST Request to ".+?" failed \(401 Unauthorized\): "Invalid Signature"$/i, 'proper error' );
 
 is( $access_token,  undef, "no access_token" );
 is( $access_secret,  undef, "no access_secret" );

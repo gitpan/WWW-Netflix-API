@@ -47,9 +47,8 @@ sub check_submit {
 $netflix->REST->Catalog->Titles->Movies('18704531');
 check_submit( $netflix, 'average_rating,box_art,category,id,link,release_year,runtime,title' );
 
-
 $netflix->REST->Users;
-check_submit( $netflix, 'can_instant_watch,first_name,last_name,link,preferred_formats,user_id' );
+check_submit( $netflix, 'can_instant_watch,first_name,last_name,link,nickname,preferred_formats,user_id' );
 
 $netflix->REST->Users->At_Home;
 check_submit( $netflix, 'at_home_item,number_of_results,results_per_page,start_index,url_template' );

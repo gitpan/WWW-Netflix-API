@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.08';
+our $VERSION = '0.10';
 
 use base qw(Class::Accessor);
 
@@ -176,6 +176,8 @@ sub RequestAccess {
   my $request_secret   = $response->token_secret;
   my $login_url        = $response->extra_params->{login_url};
   my $application_name = $response->extra_params->{application_name};
+  $application_name =~ tr/+/ /;
+  $application_name = uri_unescape( $application_name );
   ###
     my $mech = WWW::Mechanize->new;
     my $url = sprintf '%s&oauth_callback=%s&oauth_consumer_key=%s&application_name=%s',
@@ -250,8 +252,8 @@ sub __OAuth_Request {
   my $request = Net::OAuth->request( $request_type )->new( %$params );
   $request->sign;
 
-  my $url = $request->to_url->as_string;
-  $self->rest_url( $url );
+  my $url = $request->to_url;
+  $self->rest_url( "$url" );
 
   my $method = $params->{request_method};
   my $req;
@@ -269,6 +271,9 @@ sub __OAuth_Request {
   my $response = $self->ua->request( $req, ($self->content_filter && !ref($self->content_filter) ? $self->content_filter : ()) );
   if ( ! $response->is_success ) {
         $self->content_error( sprintf '%s Request to "%s" failed (%s): "%s"', $method, $url, $response->status_line, $response->content );
+        return;
+  }elsif( ! length ${$response->content_ref} ){
+        $self->content_error( sprintf '%s Request to "%s" failed (%s) (__EMPTY_CONTENT__): "%s"', $method, $url, $response->status_line, $response->content );
         return;
   }
   $self->_set_content( $response->content_ref );
@@ -316,7 +321,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.08
+Version 0.10
 
 
 =head1 OVERVIEW
@@ -628,6 +633,10 @@ or just execute specific tests:
 	prove -v -Ilib t/api.t
 	prove -v -Ilib t/access_token.t
 
+=head1 APPLICATIONS
+
+Are you using WWW::Netflix::API in your application?
+Please email me with your application name and url or email, and i will be happy to list it here.
 
 =head1 AUTHOR
 

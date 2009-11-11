@@ -45,7 +45,7 @@ sub check_bad_submit {
 my $url;
 
 $netflix->REST->Catalog->Titles->Movies('NOT.A.VALID.ID');
-check_bad_submit( $netflix, '404 Not Found' );
+check_bad_submit( $netflix, '__EMPTY_CONTENT__' );
 
 $netflix->REST->Users;
 is( $netflix->_submit('FOO'), undef,                  "[bad method] got undef" );

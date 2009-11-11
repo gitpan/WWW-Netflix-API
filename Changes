@@ -1,5 +1,18 @@
 Revision history for WWW-Netflix-API
 
+0.10	2009-11-11
+	* RT#48863: Can't locate object "as_string"
+		patch from zsan
+	* RT#47201: Double url encoding of application name causing netflix 401 error
+		patch from chrisrhodes
+	* Changed __OAuth_Request to consider '200 OK' and error if content is empty.
+	* test suite update for api change to support nickname for $netflix->REST->Users
+	* Added 'APPLICATIONS' section to the POD
+
+0.09	2008-12-30 # not released
+	* updated proper error message in t/access_token.t
+	* Tested (successfully) against Net-OAuth-0.14
+
 0.08	2008-12-08
 	* added examples/catalog-lwp_handlers.pl to MANIFEST
 	* changed examples/catalog.pl to show saving directly to file
