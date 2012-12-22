@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11';
 
 use base qw(Class::Accessor);
 
@@ -130,7 +130,7 @@ sub rest2sugar {
   my @params;
   $url =~ s#^http://api.netflix.com##;
   $url =~ s#(/users/)(\w|-){30,}/#$1#i;
-  $url =~ s#/(\d+)(?=/|$)#('$1')#;
+  $url =~ s#/(\d+)(?=/|\?|$)#('$1')#;
   if( $url =~ s#\?(.+)## ){
     my $querystring = $1;
     @params = map {
@@ -321,7 +321,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.10
+Version 0.11
 
 
 =head1 OVERVIEW

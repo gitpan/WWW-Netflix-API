@@ -1,5 +1,11 @@
 Revision history for WWW-Netflix-API
 
+0.11	2012-12-21
+	--> This was unreleased from 2009-11-12 ... Blindly releasing it now before new co-maintainer takesover.
+	* add a couple new examples/ files
+	* RT#51740 Makefile.PL prereq error
+		patch from stro
+
 0.10	2009-11-11
 	* RT#48863: Can't locate object "as_string"
 		patch from zsan

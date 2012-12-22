@@ -26,4 +26,7 @@ examples/catalog.pl
 examples/search.pl
 examples/catalog2db.pl
 examples/catalog-lwp_handlers.pl
-META.yml                                 Module meta-data (added by MakeMaker)
+examples/catalog_filter.pl
+examples/rest2sugar.pl
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
