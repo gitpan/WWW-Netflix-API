@@ -3,7 +3,7 @@ package WWW::Netflix::API;
 use warnings;
 use strict;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use base qw(Class::Accessor);
 
@@ -22,6 +22,7 @@ __PACKAGE__->mk_accessors(qw/
 	access_secret
 	user_id
 	_levels
+	base_url
 	rest_url
 	_url
 	_params
@@ -35,6 +36,7 @@ sub new {
   my $self = shift;
   my $fields = shift || {};
   $fields->{ua} ||= LWP::UserAgent->new();
+  $fields->{base_url} = "api-public.netflix.com";
   return $self->SUPER::new( $fields, @_ );
 }
 
@@ -88,7 +90,7 @@ sub REST {
 sub url {
   my $self = shift;
   return $self->_url if $self->_url;
-  return join '/', 'http://api.netflix.com', @{ $self->_levels || [] };
+  return join '/', "http://" . $self->{base_url}, @{ $self->_levels || [] };
 }
 
 sub _submit {
@@ -128,7 +130,7 @@ sub rest2sugar {
   my $url = shift;
   my @stack = ( '$netflix', 'REST' );
   my @params;
-  $url =~ s#^http://api.netflix.com##;
+  $url =~ s#^http://$self->{base_url}##;
   $url =~ s#(/users/)(\w|-){30,}/#$1#i;
   $url =~ s#/(\d+)(?=/|\?|$)#('$1')#;
   if( $url =~ s#\?(.+)## ){
@@ -164,7 +166,7 @@ sub RequestAccess {
   ###
   $request = $self->__OAuth_Request(
 	'request token',
-	request_url  => 'http://api.netflix.com/oauth/request_token',
+	request_url  => "http://" . $self->{base_url} . "/oauth/request_token",
 	request_method => 'POST',
   ) or do {
 	warn $self->content_error;
@@ -205,7 +207,7 @@ sub RequestAccess {
   ###
   $request = $self->__OAuth_Request(
 	'access token',
-	request_url  => 'http://api.netflix.com/oauth/access_token',
+	request_url  => "http://" . $self->{base_url} . "/oauth/access_token",
 	request_method => 'POST',
 	token => $request_token,
 	token_secret => $request_secret,
@@ -321,7 +323,7 @@ WWW::Netflix::API - Interface for Netflix's API
 
 =head1 VERSION
 
-Version 0.11
+Version 0.12
 
 
 =head1 OVERVIEW
@@ -395,7 +397,7 @@ Branding Requirements (L<http://developer.netflix.com/docs/Branding>).
 
 This module provides access to the REST API via perl syntactical sugar. For example, to find a user's queue, the REST url is of the form users/I<userID>/feeds :
 
-  http://api.netflix.com/users/T1tareQFowlmc8aiTEXBcQ5aed9h_Z8zdmSX1SnrKoOCA-/queues/disc
+  http://api-public.netflix.com/users/T1tareQFowlmc8aiTEXBcQ5aed9h_Z8zdmSX1SnrKoOCA-/queues/disc
 
 Using this module, the syntax would be
 (note that the Post or Delete methods can be used instead of Get, depending upon the API action being taken):
@@ -407,7 +409,6 @@ Using this module, the syntax would be
 Other examples include:
 
   $netflix->REST->Users;
-  $netflix->REST->Users->At_Home;
   $netflix->REST->Catalog->Titles->Movies('18704531');
   $netflix->REST->Users->Feeds;
   $netflix->REST->Users->Rental_History;
@@ -506,7 +507,7 @@ This is used to change the resource that is being accessed. Some examples:
   $netflix->REST->Catalog->Titles->Movies('60021896');
 
   # Load a pre-formed url (e.g. a title_ref from a previous query)
-  $netflix->REST('http://api.netflix.com/users/T1tareQFowlmc8aiTEXBcQ5aed9h_Z8zdmSX1SnrKoOCA-/queues/disc?feed_token=T1u.tZSbY9311F5W0C5eVQXaJ49.KBapZdwjuCiUBzhoJ_.lTGnmES6JfOZbrxsFzf&amp;oauth_consumer_key=v9s778n692e9qvd83wfj9t8c&amp;output=atom');
+  $netflix->REST('http://api-public.netflix.com/users/T1tareQFowlmc8aiTEXBcQ5aed9h_Z8zdmSX1SnrKoOCA-/queues/disc?feed_token=T1u.tZSbY9311F5W0C5eVQXaJ49.KBapZdwjuCiUBzhoJ_.lTGnmES6JfOZbrxsFzf&amp;oauth_consumer_key=v9s778n692e9qvd83wfj9t8c&amp;output=atom');
 
 =head2 RequestAccess
 

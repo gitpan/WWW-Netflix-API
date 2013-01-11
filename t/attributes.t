@@ -7,6 +7,7 @@ use WWW::Netflix::API;
 $|=1;
 
 my $netflix = WWW::Netflix::API->new({});
+my $base_url = $netflix->{base_url};
 
 foreach my $k ( qw/
 	consumer_key
@@ -89,7 +90,7 @@ is( $netflix->url, 'foo',                 '[url;+-] check url()'    );
 
 is( $netflix->_url(''), '',               '[url;--] set _url    -'  );
 is( $netflix->_levels(undef), undef,      '[url;--] set _levels -'  );
-is( $netflix->url, 'http://api.netflix.com',
+is( $netflix->url, 'http://' . $base_url,
                                           '[url;--] check url()'    );
 
 my $arr = [123,456];
@@ -99,6 +100,6 @@ is( $netflix->url, 'foo',                 '[url;++] check url()'    );
 
 is( $netflix->_url(''), '',               '[url;-+] set _url    -'  );
 is_deeply( $netflix->_levels($arr), $arr, '[url;-+] set _levels +'  );
-is( $netflix->url, 'http://api.netflix.com/123/456',
+is( $netflix->url, 'http://' . $base_url . '/123/456',
                                           '[url;-+] check url()'    );
 

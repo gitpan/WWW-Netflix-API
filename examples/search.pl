@@ -8,7 +8,7 @@ use XML::Simple;
 my $search_string = $ARGV[0] or die 'need search string';
 
 my $netflix = WWW::Netflix::API->new({
-	do('vars.inc'),
+	do('./vars.inc'),
 	content_filter => sub { XMLin(@_) },
 });
 

@@ -6,9 +6,11 @@ use WWW::Netflix::API;
 use XML::Simple;
 
 my $netflix = WWW::Netflix::API->new({
-	do('vars.inc'),
+	do('./vars.inc'),
 	content_filter => sub { XMLin(@_) },
 });
+use Data::Dump qw(dump);
+warn dump $netflix;
 
 $netflix->REST->Users->Feeds;
 $netflix->Get();

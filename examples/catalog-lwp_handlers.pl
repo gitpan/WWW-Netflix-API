@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use WWW::Netflix::API;
 
-my %vars = do('vars.inc');
+my %vars = do('./vars.inc');
 my $netflix = WWW::Netflix::API->new({
 	consumer_key    => $vars{consumer_key},
 	consumer_secret => $vars{consumer_secret},
@@ -25,6 +25,6 @@ $netflix->ua->add_handler( response_done => sub {
   close OUTPUT or die $!;
 } );
 
-$netflix->REST->Catalog->Titles->Index;
+$netflix->REST->Catalog->Titles->DVD;
 $netflix->Get();
 

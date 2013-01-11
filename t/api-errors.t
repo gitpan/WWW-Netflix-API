@@ -20,7 +20,7 @@ if( ! $env{consumer_key} ){
 }
 eval "use XML::Simple";
 if( $@ ){
-  plan skip_all => 'XML::Simple required for testing POX content',
+  plan skip_all => 'XML::Simple required for testing POX content';
   exit;
 }
 plan tests => 6;

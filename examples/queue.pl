@@ -6,7 +6,7 @@ use WWW::Netflix::API;
 use XML::Simple;
 
 my $netflix = WWW::Netflix::API->new({
-	do('vars.inc'),
+	do('./vars.inc'),
 	content_filter => sub { XMLin(@_) },
 });
 

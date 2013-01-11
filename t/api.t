@@ -20,7 +20,7 @@ if( ! $env{consumer_key} ){
 }
 eval "use XML::Simple";
 if( $@ ){
-  plan skip_all => 'XML::Simple required for testing POX content',
+  plan skip_all => 'XML::Simple required for testing POX content';
   exit;
 }
 plan tests => 30;
@@ -29,6 +29,7 @@ my $netflix = WWW::Netflix::API->new({
 	%env,
 	content_filter => sub { XMLin(@_) },
 });
+my $base_url = $netflix->{base_url};
 
 sub check_submit {
   my $netflix = shift;
@@ -36,7 +37,9 @@ sub check_submit {
   my $options = shift || {};
   my $label = sprintf '[%s] ', join('/', @{ $netflix->_levels });
   my $uid = $netflix->user_id;
-  $label =~ s/$uid/<UID>/g;
+  if (defined($uid)) {
+  	$label =~ s/$uid/<UID>/g;
+  }
   sleep 1;   # avoid 'Over queries per second limit' error
   ok( $netflix->Get(%$options), "$label got data" );
   is( $netflix->content_error, undef, "$label no error" );
@@ -50,14 +53,11 @@ check_submit( $netflix, 'average_rating,box_art,category,id,link,release_year,ru
 $netflix->REST->Users;
 check_submit( $netflix, 'can_instant_watch,first_name,last_name,link,nickname,preferred_formats,user_id' );
 
-$netflix->REST->Users->At_Home;
-check_submit( $netflix, 'at_home_item,number_of_results,results_per_page,start_index,url_template' );
-
 $netflix->REST->Users->Feeds;
 check_submit( $netflix, 'link' );
 
 #$netflix->REST->Users->Title_States;
-#check_submit( $netflix, 'at_home_item,number_of_results,results_per_page,start_index,url_template', {title_refs=>['http://api.netflix.com/catalog/titles/movies/70036143']} );
+#check_submit( $netflix, 'at_home_item,number_of_results,results_per_page,start_index,url_template', {title_refs=>['http://' . $base_url . '/catalog/titles/movies/70036143']} );
 
 $netflix->REST->Users->Queues;
 check_submit( $netflix, 'link' );
@@ -73,10 +73,10 @@ $netflix->REST->Users->Queues->Disc;
 $netflix->REST( $netflix->rest_url );
 check_submit( $netflix, 'etag,link,number_of_results,queue_item,results_per_page,start_index,url_template' );
 
-$netflix->REST('http://api.netflix.com/catalog/titles/movies/18704531');
+$netflix->REST('http://' . $base_url . '/catalog/titles/movies/18704531');
 check_submit( $netflix, 'average_rating,box_art,category,id,link,release_year,runtime,title' );
 
 my $uid = $netflix->user_id;
-$netflix->REST("http://api.netflix.com/users/$uid/queues/instant");
+$netflix->REST('http://' . $base_url . '/users/$uid/queues/instant');
 check_submit( $netflix, 'etag,link,number_of_results,queue_item,results_per_page,start_index,url_template' );
 
